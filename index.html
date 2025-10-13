@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线课表查询</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        select, button {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #3367d6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-group button {
+            flex: 1;
+            padding: 10px;
+        }
+        .result {
+            margin-top: 25px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            min-height: 120px;
+            transition: opacity 0.5s ease;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>在线课表查询</h1>
+
+        <div class="form-group">
+            <label for="week">选择周数</label>
+            <select id="week">
+                <option value="1">第1周</option>
+                <option value="2">第2周</option>
+                <option value="3">第3周</option>
+                <option value="4">第4周</option>
+                <option value="5">第5周</option>
+                <option value="6">第6周</option>
+                <option value="7">第7周</option>
+                <option value="8">第8周</option>
+                <option value="9">第9周</option>
+                <option value="10">第10周</option>
+                <option value="11">第11周</option>
+                <option value="12">第12周</option>
+                <option value="13">第13周</option>
+                <option value="14">第14周</option>
+                <option value="15">第15周</option>
+                <option value="16">第16周</option>
+                <option value="17">第17周</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>选择星期</label>
+            <div class="btn-group" id="weekdayBtns">
+                <button data-value="1">周一</button>
+                <button data-value="2">周二</button>
+                <button data-value="3">周三</button>
+                <button data-value="4">周四</button>
+                <button data-value="5">周五</button>
+                <button data-value="6">周六</button>
+                <button data-value="7">周日</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>选择节次</label>
+            <div class="btn-group" id="periodBtns">
+                <button data-value="1">1-2节</button>
+                <button data-value="2">3-4节</button>
+                <button data-value="3">5-6节</button>
+                <button data-value="4">7-8节</button>
+                <button data-value="5">9-10节</button>
+                <button data-value="6">11-12节</button>
+            </div>
+        </div>
+
+        <button id="queryBtn">查询课程</button>
+
+        <div class="result" id="result">
+            请选择周数、星期和节次，点击“查询课程”查看结果
+        </div>
+    </div>
+
+    <script>
+        // 课表数据：[星期][节次] = {课程名, 教室/线上}
+        const scheduleData = [
+            // 周一（索引1）
+            [
+                { name: "大学生心理健康教育119", room: "1206教室" },
+                { name: "大学英语AI23", room: "1304教室" },
+                { name: "无课程", room: "无" },
+                { name: "高等数学AI11", room: "1309教室" },
+                { name: "高等数学AI11", room: "1309教室" },
+                { name: "无课程", room: "无" }
+            ],
+            // 周二（索引2）
+            [
+                { name: "C语言程序设计06", room: "1220教室" },
+                { name: "体育", room: "操场" },
+                { name: "工程制图与AutoCAD03", room: "1404教室" },
+                { name: "工程制图与AutoCAD03", room: "1505公共机房" },
+                { name: "工程制图与AutoCAD03", room: "1505公共机房" },
+                { name: "无课程", room: "无" }
+            ],
+            // 周三（索引3）
+            [
+                { name: "C语言程序设计06\n大学生心理健康教育119", room: "1504公共机房\n1420教室" },
+                { name: "高等数学AI11", room: "1309教室" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" }
+            ],
+            // 周四（索引4）
+            [
+                { name: "军事理论17", room: "1108教室" },
+                { name: "形势与政策57", room: "1309教室" },
+                { name: "无课程", room: "无" },
+                { name: "思想道德与法治31", room: "1109教室" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" }
+            ],
+            // 周五（索引5）
+            [
+                { name: "高等数学AI11", room: "1303教室" },
+                { name: "思想道德与法治31", room: "1411教室" },
+                { name: "大学英语AI23", room: "1304教室" },
+                { name: "C语言程序设计06", room: "1518教室\n杨柳青校区1508公共机房\n杨柳青校区1518公共机房" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" }
+            ],
+            // 周六（索引6）
+            [
+                { name: "军事理论17\n大学生心理健康教育119", room: "线上教学\n线上教学" },
+                { name: "军事理论17", room: "线上教学" },
+                { name: "大学生心理健康教育119", room: "线上教学" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" }
+            ],
+            // 周日（索引7）
+            [
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" },
+                { name: "无课程", room: "无" }
+            ]
+        ];
+
+        // 初始化选中状态
+        let selectedWeekday = 1;
+        let selectedPeriod = 1;
+
+        // 星期按钮点击事件
+        document.getElementById('weekdayBtns').querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 重置所有按钮样式
+                document.getElementById('weekdayBtns').querySelectorAll('button').forEach(b => {
+                    b.style.backgroundColor = '';
+                    b.style.color = '';
+                });
+                // 高亮当前按钮
+                this.style.backgroundColor = '#4285f4';
+                this.style.color = 'white';
+                // 更新选中的星期
+                selectedWeekday = parseInt(this.dataset.value);
+            });
+        });
+
+        // 节次按钮点击事件
+        document.getElementById('periodBtns').querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 重置所有按钮样式
+                document.getElementById('periodBtns').querySelectorAll('button').forEach(b => {
+                    b.style.backgroundColor = '';
+                    b.style.color = '';
+                });
+                // 高亮当前按钮
+                this.style.backgroundColor = '#4285f4';
+                this.style.color = 'white';
+                // 更新选中的节次
+                selectedPeriod = parseInt(this.dataset.value);
+            });
+        });
+
+        // 查询按钮点击事件
+        document.getElementById('queryBtn').addEventListener('click', function() {
+            const week = document.getElementById('week').value;
+            const course = scheduleData[selectedWeekday - 1][selectedPeriod - 1];
+            const resultHtml = `
+                第${week}周 | 星期${['一','二','三','四','五','六','日'][selectedWeekday - 1]} | ${['1-2节','3-4节','5-6节','7-8节','9-10节','11-12节'][selectedPeriod - 1]}
+                <br><br>
+                课程名称：${course.name}
+                <br><br>
+                上课地点/形式：${course.room}
+            `;
+            const resultEl = document.getElementById('result');
+            resultEl.innerHTML = resultHtml;
+            resultEl.classList.add('fade-in');
+            // 动画结束后移除类，以便下次触发
+            setTimeout(() => {
+                resultEl.classList.remove('fade-in');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
